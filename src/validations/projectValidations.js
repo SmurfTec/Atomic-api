@@ -12,6 +12,13 @@ module.exports = {
     priority: Joi.string().required(),
     difficultyLevel: Joi.number().required(),
   }),
+  testUpdateValidation: Joi.object({
+    name: Joi.string(),
+    language: Joi.string(),
+    preRequiste: Joi.string(),
+    priority: Joi.string(),
+    difficultyLevel: Joi.number(),
+  }),
   scenarioValidation: Joi.object({
     action: Joi.string(),
     inputs: Joi.string(),

@@ -4,35 +4,39 @@ const protect = require('../middlewares/protect');
 const restrictTo = require('../middlewares/restrictTo');
 
 const router = express.Router();
+router.use(protect);
 
 router
   .route('/')
-  .get(protect, projectController.getAllProjects)
-  .post(protect, restrictTo('admin'), projectController.createProject);
+  .get(projectController.getAllProjects)
+  .post(restrictTo('admin'), projectController.createProject);
 
 router
   .route('/:id')
-  .get(protect, restrictTo('admin'), projectController.updateProject)
-  .post(protect, restrictTo('admin'), projectController.deleteProject);
+  .get(projectController.getProject)
+  .patch(restrictTo('admin'), projectController.updateProject)
+  .delete(restrictTo('admin'), projectController.deleteProject);
 
 router
-  .route('/test')
-  .get(protect, projectController.getAllTests)
-  .post(protect, projectController.createTest);
-
-router
-  .route('/scenario')
-  .get(protect, projectController.getScenarios)
-  .post(protect, projectController.createScenario);
+  .route('/:id/tests')
+  .get(projectController.getAllTests)
+  .post(projectController.createTest);
 
 router
   .route('/test/:id')
-  .get(protect, projectController.updateTest)
-  .post(protect, projectController.deleteTest);
+  .get(projectController.getTest)
+  .patch(projectController.updateTest)
+  .delete(restrictTo('qaManager', 'admin'), projectController.deleteTest);
+
+router
+  .route('/tests/:tid/scenario')
+  .get(projectController.getAllScenarios)
+  .post(projectController.createScenario);
 
 router
   .route('/scenario/:id')
-  .get(protect, projectController.updateScenario)
-  .post(protect, projectController.deleteScenario);
+  .get(projectController.getScenario)
+  .patch(projectController.updateScenario)
+  .delete(projectController.deleteScenario);
 
 module.exports = router;

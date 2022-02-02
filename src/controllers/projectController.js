@@ -7,6 +7,7 @@ const {
   projectValidation,
   testValidation,
   scenarioValidation,
+  testUpdateValidation,
 } = require('../validations/projectValidations');
 const AppError = require('../helpers/appError');
 
@@ -27,17 +28,17 @@ exports.createProject = catchAsync(async (req, res) => {
   if (validate.error) {
     return next(new AppError(validate.error, 400));
   }
+
   const project = await Project.create(req.body);
 
   res.status(200).json({
     status: 'success',
-    results: project.length,
     project,
   });
 });
 
 exports.getProject = catchAsync(async (req, res, next) => {
-  const project = await project.findById(req.params.id);
+  const project = await Project.findById(req.params.id);
 
   res.status(200).json({
     status: 'success',
@@ -52,7 +53,7 @@ exports.updateProject = catchAsync(async (req, res, next) => {
   }
 
   const updatedproject = await Project.findByIdAndUpdate(
-    req.user._id,
+    req.params.id,
     { ...req.body },
     {
       runValidators: true,
@@ -86,7 +87,9 @@ exports.deleteProject = catchAsync(async (req, res, next) => {
 //* TESTS
 
 exports.getAllTests = catchAsync(async (req, res) => {
-  const tests = await Test.find();
+  const project = await Project.findById(req.params.id);
+
+  const tests = project.tests;
 
   res.status(200).json({
     status: 'success',
@@ -95,7 +98,7 @@ exports.getAllTests = catchAsync(async (req, res) => {
   });
 });
 
-exports.createTest = catchAsync(async (req, res) => {
+exports.createTest = catchAsync(async (req, res, next) => {
   const validate = testValidation.validate(req.body);
   if (validate.error) {
     return next(new AppError(validate.error, 400));
@@ -126,12 +129,13 @@ exports.getTest = catchAsync(async (req, res, next) => {
 });
 
 exports.updateTest = catchAsync(async (req, res, next) => {
-  const validate = testValidation.validate(req.body);
+  const validate = testUpdateValidation.validate(req.body);
   if (validate.error) {
     return next(new AppError(validate.error, 400));
   }
 
   const updatedtest = await Test.findByIdAndUpdate(
+    req.params.id,
     { ...req.body },
     {
       runValidators: true,
@@ -162,47 +166,53 @@ exports.deleteTest = catchAsync(async (req, res, next) => {
 
 //* SCENARIOS
 
-exports.getAllProjects = catchAsync(async (req, res) => {
-  const projects = await Project.find();
+exports.getAllScenarios = catchAsync(async (req, res) => {
+  const scenarios = await Scenario.find();
 
   res.status(200).json({
     status: 'success',
-    results: projects.length,
-    projects,
+    scenarios,
   });
 });
 
-exports.createProject = catchAsync(async (req, res) => {
-  const validate = projectValidation.validate(req.body);
-  if (validate.error) {
-    return next(new AppError(validate.error, 400));
-  }
-  const project = await Project.create(req.body);
-
-  res.status(200).json({
-    status: 'success',
-    results: project.length,
-    project,
-  });
-});
-
-exports.getProject = catchAsync(async (req, res, next) => {
-  const project = await project.findById(req.params.id);
-
-  res.status(200).json({
-    status: 'success',
-    project,
-  });
-});
-
-exports.updateProject = catchAsync(async (req, res, next) => {
-  const validate = projectValidation.validate(req.body);
+exports.createScenario = catchAsync(async (req, res, next) => {
+  const validate = scenarioValidation.validate(req.body);
   if (validate.error) {
     return next(new AppError(validate.error, 400));
   }
 
-  const updatedproject = await Project.findByIdAndUpdate(
-    req.user._id,
+  const { tid } = req.params;
+
+  const test = await Test.findById(tid);
+  if (!test) return next(new AppError(`No test found against id ${tid}`, 404));
+
+  const scenario = await Scenario.create(req.body);
+  test.scenarios.push(scenario._id);
+  await test.save();
+
+  res.status(200).json({
+    status: 'success',
+    scenario,
+  });
+});
+
+exports.getScenario = catchAsync(async (req, res, next) => {
+  const scenario = await Scenario.findById(req.params.id);
+
+  res.status(200).json({
+    status: 'success',
+    scenario,
+  });
+});
+
+exports.updateScenario = catchAsync(async (req, res, next) => {
+  const validate = scenarioValidation.validate(req.body);
+  if (validate.error) {
+    return next(new AppError(validate.error, 400));
+  }
+
+  const updatedscenario = await Scenario.findByIdAndUpdate(
+    req.params.id,
     { ...req.body },
     {
       runValidators: true,
@@ -210,25 +220,27 @@ exports.updateProject = catchAsync(async (req, res, next) => {
     }
   );
 
-  if (!updatedproject)
+  if (!updatedscenario)
     return next(
-      new AppError(`Can't find any project with id ${projectId}`, 404)
+      new AppError(`Can't find any scenario with id ${scenarioId}`, 404)
     );
 
   res.status(200).json({
     status: 'success',
-    project: updatedproject,
+    scenario: updatedscenario,
   });
 });
 
-exports.deleteProject = catchAsync(async (req, res, next) => {
-  const deletedproject = await Project.findByIdAndDelete(req.params.id);
+exports.deleteScenario = catchAsync(async (req, res, next) => {
+  const deletedscenario = await Scenario.findByIdAndDelete(req.params.id);
 
-  if (!deletedproject)
-    return next(new AppError(`No project found against id ${projectId}`, 404));
+  if (!deletedscenario)
+    return next(
+      new AppError(`No scenario found against id ${scenarioId}`, 404)
+    );
 
   res.status(200).json({
     status: 'success',
-    project: deletedproject,
+    scenario: deletedscenario,
   });
 });

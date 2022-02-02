@@ -19,10 +19,17 @@ const testSchema = new mongoose.Schema(
       type: Number,
       enum: [1, 2, 3, 4, 5],
     },
-    Scenarios: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Scenario' }],
+    scenarios: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Scenario' }],
   },
   baseOptions
 );
+
+testSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'scenarios',
+  });
+  next();
+});
 
 const Test = mongoose.model('Test', testSchema);
 module.exports = Test;

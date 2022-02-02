@@ -15,5 +15,12 @@ const projectSchema = new mongoose.Schema(
   baseOptions
 );
 
+projectSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'tests',
+  });
+  next();
+});
+
 const Project = mongoose.model('Project', projectSchema);
 module.exports = Project;
