@@ -1,5 +1,3 @@
-require('./src/services/passportService');
-const passport = require('passport');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -8,12 +6,12 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const path = require('path');
-const cookieSession = require('cookie-session');
 
 const app = express();
 
 const userRouter = require('./src/routers/userRouter');
 const authRouter = require('./src/routers/authRouter');
+const projectRouter = require('./src/routers/projectRouter');
 
 const globalErrorHandler = require('./src/middlewares/globalErrorHandler');
 
@@ -22,17 +20,6 @@ const AppError = require('./src/helpers/appError');
 // view engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
-app.use(
-  cookieSession({
-    name: 'session',
-    keys: ['lama'],
-    maxAge: 24 * 60 * 60 * 100,
-  }) // maxAge is 1day
-);
-
-app.use(passport.initialize());
-app.use(passport.session());
 
 app.use(express.json());
 
@@ -69,6 +56,7 @@ app.use(xss()); //    protect from molision code coming from html
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
+app.use('/api/projects', projectRouter);
 
 // handling all (get,post,update,delete.....) unhandled routes
 

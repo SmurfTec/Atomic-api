@@ -1,12 +1,11 @@
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const catchAsync = require('../helpers/catchAsync');
 const AppError = require('../helpers/appError');
 const {
   signUpValidation,
   loginValidation,
 } = require('../validations/userValidations');
-const AuthServices = require('../services/authServices');
+const User = require('../models/User');
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -34,9 +33,13 @@ exports.signup = catchAsync(async (req, res, next) => {
     return next(new AppError(validate.error, 400));
   }
 
-  const { user } = await AuthServices.signup(req.body);
+  let user = await User.create(req.body);
 
-  createsendToken(user, 201, res);
+  res.status(201).json({
+    status: 'success',
+    user,
+  });
+  // createsendToken(user, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -44,63 +47,23 @@ exports.login = catchAsync(async (req, res, next) => {
   if (validate.error) {
     return next(new AppError(validate.error, 400));
   }
-  const { user } = await AuthServices.login(req.body, next);
+  const { email, password } = req.body;
+  if (!email || !password) {
+    //  check email and password exist
+    return next(new AppError(' please proveide email and password ', 400));
+  }
+  const user = await User.findOne({ email }).select('+password'); // select expiclity password
+  if (!user)
+    return next(new AppError(`No User found against email ${email}`, 404));
 
-  createsendToken(user, 200, res);
-});
+  console.log(`user.role`, user.role);
 
-exports.confirmMail = catchAsync(async (req, res, next) => {
-  // 1 Hash The Avtivation Link
-
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(req.params.activationLink)
-    .digest('hex');
-
-  await AuthServices.confirmMail(hashedToken, next);
-
-  res.status(200).json({
-    status: 'Success',
-    message: 'Account has been Activated Successfully !',
-  });
-});
-
-exports.forgotPassword = catchAsync(async (req, res, next) => {
-  // 1 Check if Email Exists
-  const { origin } = req.headers;
-  const { email } = await AuthServices.forgotPassword(req.body, origin, next);
-
-  res.status(200).json({
-    status: 'Success',
-    message: `Forget password link successfully sent to your email : ${email}`,
-  });
-});
-
-exports.resetPassword = catchAsync(async (req, res, next) => {
-  // 1 Find the  user based on Token
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(req.params.resetToken)
-    .digest('hex');
-
-  const { user } = await AuthServices.resetPassword(
-    req.body,
-    hashedToken,
-    next
-  );
-
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
-});
-
-//    Update Password for only logged in user
-
-exports.updatePassword = catchAsync(async (req, res, next) => {
-  const userId = req.user._id;
-  const { user } = await AuthServices.updatePassword(req.body, userId, next);
-  // 4) Log user in , send JWT
+  if (
+    !user || // check user exist and password correct
+    !(await user.correctPassword(password, user.password))
+  ) {
+    // candinate password,correctpassword
+    return next(new AppError('incorrect email or password', 401));
+  }
   createsendToken(user, 200, res);
 });

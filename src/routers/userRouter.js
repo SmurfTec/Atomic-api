@@ -11,15 +11,7 @@ router
   .get(protect, userController.getMe)
   .patch(protect, userController.updateMe);
 
-router.route('/').get(protect, restrictTo('admin'), userController.getAllUsers);
-
-router.patch('/updatePassword', protect, authController.updatePassword);
-router.post('/subscribe', userController.subscribe);
-
-router
-  .route('/contact')
-  .get(protect, restrictTo('admin'), userController.getContacts)
-  .post(userController.createContact);
+router.route('/').get(protect, userController.getAllUsers);
 
 router
   .route('/:id')

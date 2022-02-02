@@ -1,11 +1,8 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
-const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
 const baseOptions = {
-  discriminatorKey: '__type',
-  collection: 'User',
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true },
@@ -13,7 +10,7 @@ const baseOptions = {
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: {
+    name: {
       type: String,
       trim: true,
       maxlength: [20, 'firstname must be less than or equal to 20'],
@@ -21,16 +18,6 @@ const userSchema = new mongoose.Schema(
       // unique: true,
       // required: [true, 'Please tell us your firstname!'],
     },
-    lastName: {
-      type: String,
-      trim: true,
-      maxlength: [20, 'lastname must be less than or equal to 20'],
-      minlength: [3, 'lastname must be greater than 3'],
-      // unique: true,
-      // required: [true, 'Please tell us your lastname!'],
-    },
-    info: { type: String, trim: true },
-    phoneNumber: Number,
     email: {
       type: String,
       required: [true, 'Please provide your email'],
@@ -41,9 +28,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['admin', 'vendor', 'buyer'],
+      enum: ['admin', 'qaManager', 'tester'],
       required: [true, `Please Provide Role`],
-      default: 'buyer',
     },
     password: {
       type: String,
@@ -62,23 +48,9 @@ const userSchema = new mongoose.Schema(
       },
       // required: [true, 'Please confirm your password'],
     },
-
-    activationLink: String,
-    passwordResetToken: String,
-    passwordResetExpires: Date,
-    activated: {
-      type: Boolean,
-      default: true, // make it false in production
-    },
-
-    //* SocaialLogings
   },
   baseOptions
 );
-
-userSchema.virtual('fullName').get(function () {
-  return `${this.firstName} ${this.lastName}`;
-});
 
 // Encrpt the password ad Presave it
 userSchema.pre('save', async function (next) {
@@ -91,17 +63,6 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-userSchema.methods.createAccountActivationLink = function () {
-  const activationToken = crypto.randomBytes(32).toString('hex');
-  // console.log(activationToken);
-  this.activationLink = crypto
-    .createHash('sha256')
-    .update(activationToken)
-    .digest('hex');
-  // console.log({ activationToken }, this.activationLink);
-  return activationToken;
-};
-
 // comparing password
 userSchema.methods.correctPassword = async function (
   candidatePassword,
@@ -109,21 +70,6 @@ userSchema.methods.correctPassword = async function (
 ) {
   console.log(candidatePassword);
   return await bcrypt.compare(candidatePassword, userPassword);
-};
-
-userSchema.methods.createPasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(32).toString('hex');
-
-  console.log(resetToken);
-
-  this.passwordResetToken = crypto
-    .createHash('sha256')
-    .update(resetToken)
-    .digest('hex');
-
-  // console.log({ resetToken }, this.passwordResetToken);
-  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
-  return resetToken;
 };
 
 const User = mongoose.model('User', userSchema);
