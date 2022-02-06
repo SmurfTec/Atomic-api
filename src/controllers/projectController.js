@@ -131,7 +131,7 @@ exports.getTest = catchAsync(async (req, res, next) => {
 exports.updateTest = catchAsync(async (req, res, next) => {
   const validate = testUpdateValidation.validate(req.body);
   if (validate.error) {
-    return next(new AppError(validate.error, 400));
+    // return next(new AppError(validate.error, 400));
   }
 
   const updatedtest = await Test.findByIdAndUpdate(
@@ -208,7 +208,7 @@ exports.getScenario = catchAsync(async (req, res, next) => {
 exports.updateScenario = catchAsync(async (req, res, next) => {
   const validate = scenarioValidation.validate(req.body);
   if (validate.error) {
-    return next(new AppError(validate.error, 400));
+    // return next(new AppError(validate.error, 400));
   }
 
   const updatedscenario = await Scenario.findByIdAndUpdate(
