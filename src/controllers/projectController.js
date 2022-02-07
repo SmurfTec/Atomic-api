@@ -23,7 +23,7 @@ exports.getAllProjects = catchAsync(async (req, res) => {
   });
 });
 
-exports.createProject = catchAsync(async (req, res) => {
+exports.createProject = catchAsync(async (req, res, next) => {
   const validate = projectValidation.validate(req.body);
   if (validate.error) {
     return next(new AppError(validate.error, 400));
